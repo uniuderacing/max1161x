@@ -28,14 +28,14 @@ pub enum Mode {
     Bipolar = 1,
 }
 
-pub struct Config {
+pub struct SetupByte {
     pub ref_select: RefSelect,
     pub clock:      Clock,
     pub mode:       Mode,
     pub reset:      bool,   // false = resetta config register, true = no action
 }
 
-impl Config {
+impl SetupByte {
     pub fn new(ref_select: RefSelect, clock: Clock, mode: Mode, reset: bool) -> Self {
         Self { ref_select, clock, mode, reset }
     }

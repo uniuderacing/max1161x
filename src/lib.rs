@@ -1,3 +1,4 @@
-pub mod devices;
 pub mod driver;
-pub mod messages;
+pub mod initbytes;
+pub mod variants;
+

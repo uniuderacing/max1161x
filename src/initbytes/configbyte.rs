@@ -37,14 +37,14 @@ pub enum InputMode {
 }
 
 
-pub struct InstructionMessage {
+pub struct ConfigByte {
     pub scanconfig: ScanConfig,
     pub channelselect: ChannelSelect,
     pub mode: InputMode
 
 }
 
-impl InstructionMessage {
+impl ConfigByte {
     pub fn new(scanconfig: ScanConfig, channelselect: ChannelSelect, mode: InputMode) -> Self {
         Self { 
             scanconfig, 
