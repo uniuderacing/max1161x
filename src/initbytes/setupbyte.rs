@@ -18,8 +18,8 @@ pub enum RefSelect {
 
 #[derive(Clone, Copy)]
 pub enum Clock {
-    Internal = 1,
-    External = 0,
+    Internal = 0,
+    External = 1,
 }
 
 #[derive(Clone, Copy)]
