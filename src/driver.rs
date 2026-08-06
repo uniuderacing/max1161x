@@ -1,5 +1,6 @@
 
 use core::{marker::PhantomData, result::Result::{Err, Ok}};
+use std::{thread, time::Duration};
 use embedded_hal::i2c::I2c; 
 use crate::{initbytes::{configbyte, setupbyte}, variants::Variant};
 
@@ -101,7 +102,7 @@ where
     }
 
 
-    pub fn tare_me(&mut self) {
+    pub fn calibrate_me(&mut self) {
     const BUFFSIZE: usize = 12;
     const ATTEMPTS: usize = 5;
           let addr= V::ADDR;
@@ -139,6 +140,8 @@ where
                 log::error!("ERR");
             }
         }
+
+        thread::sleep(Duration::from_millis(500));
     }
 
     for i in 0..BUFFSIZE {
