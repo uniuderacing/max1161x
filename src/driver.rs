@@ -70,7 +70,7 @@ where
         // and since it's a 12-bit ADC the 4 most significant bits of the high byte need to be masked to 0 using the & 0x0F operation
         match self.i2c.write_read(addr, &config_byte, &mut rx_buffer[..rx_size]){
             Ok(_)=>{
-                for (channel_index, pair) in rx_buffer.chunks_exact(2).enumerate(){
+                for (channel_index, pair) in rx_buffer[..rx_size].chunks_exact(2).enumerate(){
                     // pair[0] is High Byte, pair[1] is Low Byte
                     // 1. Mask the high byte (keep only the lower 4 bits)
                     let high_part = (pair[0] & 0x0F) as u16;
