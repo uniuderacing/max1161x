@@ -36,7 +36,7 @@ pub enum InputMode {
     Differential = 0,
 }
 
-
+#[derive(Clone, Copy)]
 pub struct ConfigByte {
     pub scanconfig: ScanConfig,
     pub channelselect: ChannelSelect,

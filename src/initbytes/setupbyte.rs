@@ -28,6 +28,7 @@ pub enum Mode {
     Bipolar = 1,
 }
 
+#[derive(Clone, Copy)]
 pub struct SetupByte {
     pub ref_select: RefSelect,
     pub clock:      Clock,
