@@ -48,7 +48,7 @@ where
 
         f(x)= a*x^3 + b*x^2 +c*x + d 
     */
-    fn convert(&mut self, v: f32) -> f32{
+    fn voltage_to_temperature(&mut self, v: f32) -> f32{
         let a = 1.79615598298204;
         let b=  -9.37248626037254;
         let c= 38.0779254777707;
@@ -60,34 +60,40 @@ where
                 + d) as f32
     }
 
-    pub fn read(& mut self) -> f32 { // dovra tornare un array di temperature
-        let mut res =0;
+    pub fn read_all_sensors(& mut self, output: &mut [f32]) -> Result<(), I2C::Error> { // dovra tornare un array di temperature
         let addr= V::ADDR;
-
+        let mut rx_buffer= [0u8; 24];
         let config_byte:[u8; 1]  = [0b01100000];
-
-        let mut rx_buffer= [0u8; 8];
-        match self.i2c.write_read(addr, &config_byte, &mut rx_buffer){
+        // rx_buffer contains 2 bytes for each channel of the v ariant
+        let rx_size = 2*V::CHANNELS;
+        // each channel reads two bytes, 0 (high=MSB) and 1 (low=LSB) so 0000 D11 D10 D9 D8 in the high and D7 ... D0 in the low 
+        // and since it's a 12-bit ADC the 4 most significant bits of the high byte need to be masked to 0 using the & 0x0F operation
+        match self.i2c.write_read(addr, &config_byte, &mut rx_buffer[..rx_size]){
             Ok(_)=>{
-                log::info!("Noerr");
-                // gestisci per buffer piu grandi
-                let msb = (rx_buffer[0] & 0x0F) as u16;
-                let lsb = rx_buffer[1] as u16;
-                let raw_value = (msb << 8) | lsb;
-                //3.3 TODO: gestisci il setup byte 
-                let voltage = (raw_value as f32 * 3.3) / 4096.0;
+                for (channel_index, pair) in rx_buffer.chunks_exact(2).enumerate(){
+                    // pair[0] is High Byte, pair[1] is Low Byte
+                    // 1. Mask the high byte (keep only the lower 4 bits)
+                    let high_part = (pair[0] & 0x0F) as u16;
+                    // 2. Shift high part left by 8 and OR with low byte
+                    let raw_value = (high_part << 8) | (pair[1] as u16);
+                    
+                    // 3. Convert to Voltage (Example: 2.048V Internal Ref)
+                    // Voltage = (Raw / 4095) * VREF
+                    let voltage = (raw_value as f32 * 3.3) / 4096.0;
 
-                converted_voltage = self.convert(voltage);
 
-                log::info!("RX: {:02X}; {:02X}", rx_buffer[0], rx_buffer[1]);
+                    let temperature = self.voltage_to_temperature(voltage);
+                    log::info!("Channel {}: Voltage={}V | Temperature {} °C", channel_index, voltage, temperature);
+                    output[channel_index] = temperature;
+                }
+                
             }
             Err(e)=>{
-                log::info!("ERR");
+                log::error!("ERR");
+                return Err(e);
             }
         }
-
-
-        return res as f32;
+        return Ok(());
     }
 
     
