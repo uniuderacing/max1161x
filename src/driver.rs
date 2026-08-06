@@ -63,7 +63,7 @@ where
     pub fn read_all_sensors(& mut self, output: &mut [f32]) -> Result<(), I2C::Error> { // dovra tornare un array di temperature
         let addr= V::ADDR;
         let mut rx_buffer= [0u8; 24];
-        let config_byte:[u8; 1]  = [0b01100000];
+        let config_byte:[u8; 1]  = [0b00010111];
         // rx_buffer contains 2 bytes for each channel of the v ariant
         let rx_size = 2*V::CHANNELS;
         // each channel reads two bytes, 0 (high=MSB) and 1 (low=LSB) so 0000 D11 D10 D9 D8 in the high and D7 ... D0 in the low 
