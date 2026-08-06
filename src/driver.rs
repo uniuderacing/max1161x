@@ -84,7 +84,10 @@ where
 
 
                     let temperature = self.voltage_to_temperature(voltage);
-                    log::info!("Channel {}: Voltage={}V | Temperature {} °C", channel_index, voltage, temperature);
+
+                    if channel_index == 0{
+                        log::info!("Channel {}: Voltage={:.4}V | Raw Value {} | Est. temperature= {temperature} C", channel_index, voltage, raw_value);
+                    }
                     output[channel_index] = temperature;
                 }
                 
@@ -97,6 +100,55 @@ where
         return Ok(());
     }
 
+
+    pub fn tare_me(&mut self) {
+    const BUFFSIZE: usize = 12;
+    const ATTEMPTS: usize = 5;
+          let addr= V::ADDR;
+
+    let mut raw_arr = [0.0; BUFFSIZE];
+    let mut volt_arr = [0.0; BUFFSIZE];
+
+    for _ in 0..ATTEMPTS {
+        let mut rx_buffer = [0u8; 24];
+
+        let config_byte: [u8; 1] =
+            [configbyte::ConfigByte::default().to_byte()];
+
+        let rx_size = 2 * V::CHANNELS;
+
+        match self.i2c.write_read(
+            addr,
+            &config_byte,
+            &mut rx_buffer[..rx_size],
+        ) {
+            Ok(_) => {
+                for (channel_index, pair) in
+                    rx_buffer[..rx_size].chunks_exact(2).enumerate()
+                {
+                    let high_part = (pair[0] & 0x0F) as u16;
+                    let raw_value = (high_part << 8) | (pair[1] as u16);
+                    let voltage = (raw_value as f32 * 3.3) / 4096.0;
+
+                    raw_arr[channel_index] += raw_value as f32;
+                    volt_arr[channel_index] += voltage;
+                }
+            }
+
+            Err(_) => {
+                log::error!("ERR");
+            }
+        }
+    }
+
+    for i in 0..BUFFSIZE {
+        raw_arr[i] /= ATTEMPTS as f32;
+        volt_arr[i] /= ATTEMPTS as f32;
+    }
+
+    log::info!("Raw Value {} | Voltage={:.4}V ", raw_arr[0], volt_arr[0]);
+                    
+}
     
 
 }
