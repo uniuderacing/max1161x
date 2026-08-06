@@ -53,6 +53,15 @@ impl ConfigByte {
         }
     }
 
+        // Costruttore con i default del chip al power-up
+    pub fn default() -> Self {
+        Self {
+            scanconfig: ScanConfig::ScanFromZero,
+            channelselect: ChannelSelect::Ain11,
+            mode: InputMode::SingleEnded,
+        }
+    }
+
     pub fn to_byte(&self) -> u8{
 
         let reg: u8= 0 << 7;                      
