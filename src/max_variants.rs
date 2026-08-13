@@ -46,5 +46,3 @@ impl Variant for MAX11617 {
     const ADDR: u8 = 0b0110101;
     const CHANNELS: usize = 12;
 }
-
-
