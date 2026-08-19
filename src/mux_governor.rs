@@ -10,7 +10,10 @@ where
     pub adc_list: Vec<(MAX116xx<I2C, V>, u8)>, // (adc, physical address)
 }
 
-
+///
+/// Oggetto utilizzato per semplificare l'uso di più adc collegati ad un unico multiplexer
+/// Astrae la gestione dei singoli adc 
+/// 
 impl<I2C, V> MuxGovernor<I2C, V>
 where
     I2C: I2c,
@@ -22,10 +25,12 @@ where
         }
     }
 
+    /// aggiunge un adc da controllare
     pub fn add_adc(&mut self, max116xx: MAX116xx<I2C, V>, address: u8) {
         self.adc_list.push((max116xx, address))
     }
 
+    /// richiede la lettura di tutti gli adc
     pub fn update_all(&mut self) -> Result<Vec<f32>, I2C::Error> {
         let mut vec_adc_values: Vec<f32> = Vec::new();
 

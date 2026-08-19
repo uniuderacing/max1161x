@@ -22,7 +22,9 @@ where
     I2C: I2c,
     V: Variant,
 {
-    pub fn new(mut i2c: I2C, setup_byte: setup_byte::SetupByte, config_byte: u8) -> Self {
+    /// crea un oggetto che rappresenta un adc
+    /// setup_byte: indica il comporamento dell'adc
+    pub fn new(mut i2c: I2C, setup_byte: setup_byte::SetupByte) -> Self {
         let init_byte = [setup_byte.to_byte()];
         let addr = V::ADDR;
 
@@ -48,6 +50,9 @@ where
 
         f(x)= a*x^3 + b*x^2 +c*x + d
     */
+
+    /// Converte il valore letto dall'adc in i32 in una misura di temperatura
+    /// utilizza un polinomiodi 3 grado
     fn voltage_to_temperature(&mut self, v: f32) -> f32 {
         let a = 1.79615598298204;
         let b = -9.37248626037254;
@@ -57,6 +62,7 @@ where
         return (a * (v as f64).powi(3) + b * (v as f64).powi(2) + c * (v as f64) + d) as f32;
     }
 
+    /// legge tutti i sensori collegati all'adc
     pub fn read_all_sensors(&mut self, output: &mut [f32]) -> Result<(), I2C::Error> {
         let addr = V::ADDR;
         let mut rx_buffer = [0u8; 24];
