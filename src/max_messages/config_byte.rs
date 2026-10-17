@@ -34,6 +34,17 @@ pub enum InputMode {
     Differential = 0,
 }
 
+impl ChannelSelect {
+    pub const fn from_index(i: usize) -> Option<Self> {
+        Some(match i {
+            0 => Self::Ain0, 1 => Self::Ain1, 2 => Self::Ain2, 3 => Self::Ain3,
+            4 => Self::Ain4, 5 => Self::Ain5, 6 => Self::Ain6, 7 => Self::Ain7,
+            8 => Self::Ain8, 9 => Self::Ain9, 10 => Self::Ain10, 11 => Self::Ain11,
+            _ => return None,
+        })
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct ConfigByte {
     pub scanconfig: ScanConfig,
