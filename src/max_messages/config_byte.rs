@@ -65,7 +65,7 @@ impl ConfigByte {
     pub fn default() -> Self {
         Self {
             scanconfig: ScanConfig::ScanFromZero,
-            channelselect: ChannelSelect::Ain11,
+            channelselect: ChannelSelect::Ain0, // following datasheet default: CS[3:0] = 0000 at power-up
             mode: InputMode::SingleEnded,
         }
     }

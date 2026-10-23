@@ -9,6 +9,7 @@ embedded-hal = "1.0.0"
 embedded-hal-async = "1.0.0"
 thiserror-no-std = "2.0.2"
 log = "0.4.33"
+# include these in order to compile successfully the examples/test.rs script
 esp-idf-hal = "0.45.2"
 embedded-hal-bus = "0.3.0"
 

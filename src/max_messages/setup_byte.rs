@@ -16,6 +16,18 @@ pub enum RefSelect {
     InternalRefOutputOn = 0b111,
 }
 
+impl RefSelect {
+    /// SEL1 = 1: AIN_/REF is a reference input/output (datasheet Table 6).
+    pub const fn ref_on_ain_pin(self) -> bool {
+        matches!(
+            self,
+            RefSelect::ExternalRef
+                | RefSelect::InternalRefOutputOff
+                | RefSelect::InternalRefOutputOn
+        )
+    }
+}
+
 #[derive(Clone, Copy)]
 pub enum Clock {
     Internal = 0,

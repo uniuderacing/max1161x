@@ -1,11 +1,6 @@
 use embedded_hal::i2c::I2c;
 use crate::{
-    error::Error,
-    max_driver::Max116xx,
-    max_messages::setup_byte::SetupByte,
-    max_variants::Variant,
-    ntc::{raw_to_celsius, Reading, SensorFault},
-    tca9543a::{Channel, Tca9543a},
+    error::Error, max_driver::Max116xx, max_messages::setup_byte::{RefSelect, SetupByte}, max_variants::Variant, ntc::{Reading, SensorFault, raw_to_celsius}, tca9543a::{Channel, Tca9543a},
 };
 
 pub struct MuxGovernor<I2C: I2c, V: Variant> {
@@ -19,30 +14,45 @@ pub struct MuxGovernor<I2C: I2c, V: Variant> {
 impl<I2C: I2c, V: Variant> MuxGovernor<I2C, V> {
     pub const SENSORS: usize = 2 * V::CHANNELS;
 
-    pub fn new(i2c: I2C, mux: Tca9543a, setup: SetupByte) -> Self {
-        Self { i2c, mux, adc: Max116xx::new(), setup, initialised: false }
+    /// Rejects setups the driver cannot read correctly, or that `ntc::raw_to_celsius`
+    /// cannot convert (it assumes VDD as reference: LSB = vdd/4096). Consumes the bus.
+    pub fn new(i2c: I2C, mux: Tca9543a, setup: SetupByte) -> Result<Self, Error<I2C::Error>> {
+        if !Max116xx::<V>::setup_supported(&setup)
+            || !matches!(setup.ref_select, RefSelect::VddRef)
+        {
+            return Err(Error::InvalidSetup);
+        }
+        Ok(Self { i2c, mux, adc: Max116xx::new(), setup, initialised: false })
     }
 
     pub fn is_initialised(&self) -> bool { self.initialised }
     /// Force re-configuration of both ADCs (e.g. after a bus error or ADC brown-out).
     pub fn invalidate(&mut self) { self.initialised = false; }
 
-    pub fn init(&mut self) -> Result<(), Error<I2C::Error>> {
+    fn configure_all(&mut self) -> Result<(), Error<I2C::Error>> {
         for ch in Channel::ALL {
             self.mux.select(&mut self.i2c, ch)?;
             self.adc.configure(&mut self.i2c, self.setup)?;
         }
-        self.mux.disable_all(&mut self.i2c)?;
+        Ok(())
+    }
+
+    pub fn init(&mut self) -> Result<(), Error<I2C::Error>> {
+        self.initialised = false;
+        self.configure_all()?;
+        self.mux.disable_all(&mut self.i2c)?; // always attempted
         self.initialised = true;
         Ok(())
     }
 
     /// Fills `out[..SENSORS]` (ADC0 channels first, then ADC1).
     /// A failing ADC marks only its own 12 sensors as `Bus`.
-    /// Returns the number of ADCs that failed.
+    /// Returns the number of ADCs that failed: **callers must check it**; on > 0
+    /// call `invalidate()` + `init()`.
     pub fn read_all(&mut self, out: &mut [Reading], vdd: f32) -> Result<usize, Error<I2C::Error>> {
         if !self.initialised { return Err(Error::NotInitialised); }
         if out.len() < Self::SENSORS { return Err(Error::BufferTooSmall); }
+        if !(vdd >= V::VDD_MIN && vdd <= V::VDD_MAX) { return Err(Error::InvalidVdd); }
 
         let mut failed = 0;
         for (idx, ch) in Channel::ALL.into_iter().enumerate() {
