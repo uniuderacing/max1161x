@@ -1,6 +1,6 @@
 use embedded_hal::i2c::I2c;
 use crate::{
-    error::Error, max_driver::Max116xx, max_messages::setup_byte::{RefSelect, SetupByte}, max_variants::Variant, ntc::{Reading, SensorFault, raw_to_celsius}, tca9543a::{Channel, Tca9543a},
+    error::Error, max_driver::Max116xx, max_messages::setup_byte::{RefSelect, SetupByte}, max_variants::Variant, ntc::{Reading, SensorFault, raw_to_celsius, raw_to_millivolts}, tca9543a::{Channel, Tca9543a},
 };
 
 pub struct MuxGovernor<I2C: I2c, V: Variant> {
@@ -49,7 +49,7 @@ impl<I2C: I2c, V: Variant> MuxGovernor<I2C, V> {
     /// A failing ADC marks only its own 12 sensors as `Bus`.
     /// Returns the number of ADCs that failed: **callers must check it**; on > 0
     /// call `invalidate()` + `init()`.
-    pub fn read_all(&mut self, out: &mut [Reading], vdd: f32) -> Result<usize, Error<I2C::Error>> {
+    pub fn read_all(&mut self, out: &mut [Reading], vdd: f32, celsius: bool) -> Result<usize, Error<I2C::Error>> {
         if !self.initialised { return Err(Error::NotInitialised); }
         if out.len() < Self::SENSORS { return Err(Error::BufferTooSmall); }
         if !(vdd >= V::VDD_MIN && vdd <= V::VDD_MAX) { return Err(Error::InvalidVdd); }
@@ -65,7 +65,13 @@ impl<I2C: I2c, V: Variant> MuxGovernor<I2C, V> {
             };
             match res {
                 Ok(()) => {
-                    for (dst, r) in slot.iter_mut().zip(raw) { *dst = raw_to_celsius(r, vdd); }
+                    for (dst, r) in slot.iter_mut().zip(raw) { 
+                        if celsius{
+                            *dst = raw_to_celsius(r, vdd); 
+                        } else {
+                            *dst = raw_to_millivolts(r, vdd); 
+                        }
+                    }
                 }
                 Err(_) => { slot.fill(Err(SensorFault::Bus)); failed += 1; }
             }

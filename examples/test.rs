@@ -39,7 +39,7 @@ fn main() {
     let mut readings = [Err(SensorFault::NotRead);24];
 
     loop {
-        match governor.read_all(&mut readings, 3.3) {
+        match governor.read_all(&mut readings, 3.3,true) {
             Ok(0) => {}  // all sensors have been correctly red
             Ok(n) => {
                 log::warn!("{n} ADC(s) failed, re-initialising");
